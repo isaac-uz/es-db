@@ -1,0 +1,26 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main  # or the branch you want to trigger on
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: isaacuz
+          password: ${{ secrets.DOC_PW }}
+
+      - name: Build Docker image
+        run: docker build -t isaacuz/es-db:latest .
+
+      - name: Push Docker image
+        run: docker push isaacuz/es-db:latest
