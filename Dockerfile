@@ -10,7 +10,7 @@ ENV discovery.type=single-node
 # ENV ELASTIC_PASSWORD=yourpassword
 
 # Expose ports
-EXPOSE 9200 9300
+EXPOSE 80 9200 9300
 
 # Set the default command to run Elasticsearch
 CMD ["bin/elasticsearch"]
