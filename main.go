@@ -8,6 +8,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
 	"strings"
+	"time"
 
 	"log"
 	"math/rand/v2"
@@ -32,8 +33,15 @@ import (
 //	}
 //}
 
-var chanSave = make(chan *SaveData, 1_000)
-var ctx = context.Background()
+const (
+	SaveInterval = 360 * time.Millisecond
+)
+
+var (
+	chanSave            = make(chan *SaveData, 1_000)
+	ctx                 = context.Background()
+	elasticsearchClient *elasticsearch.Client
+)
 
 func main() {
 
@@ -65,6 +73,8 @@ func saveService() {
 			fmt.Println("on saveService:")
 			fmt.Println(err)
 		}
+
+		time.Sleep(SaveInterval)
 
 	}
 
@@ -123,7 +133,7 @@ func handleSearch(c *gin.Context) {
 		data.Fuzziness = "AUTO"
 	}
 
-	objs, err := searchFuzzy(getES(), data)
+	objs, err := searchFuzzy(data)
 	if err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("search err: %v", err))
 		return
@@ -133,7 +143,8 @@ func handleSearch(c *gin.Context) {
 
 }
 
-func searchFuzzy(client *elasticsearch.Client, data *SearchData) ([]Obj, error) {
+func searchFuzzy(data *SearchData) ([]Obj, error) {
+	client := getES()
 	searchBody := fmt.Sprintf(`
 	{
 		"query": {
@@ -183,6 +194,15 @@ func searchFuzzy(client *elasticsearch.Client, data *SearchData) ([]Obj, error) 
 }
 
 func getES() *elasticsearch.Client {
+
+	if elasticsearchClient == nil {
+		initES()
+	}
+
+	return elasticsearchClient
+}
+
+func initES() (*elasticsearch.Client, error) {
 	cfg := elasticsearch.Config{
 		Addresses: []string{
 			"http://localhost:9200",
@@ -190,11 +210,11 @@ func getES() *elasticsearch.Client {
 	}
 
 	client, err := elasticsearch.NewClient(cfg)
-	if err != nil {
-		return nil
+	if err == nil {
+		elasticsearchClient = client
 	}
 
-	return client
+	return client, err
 }
 
 type SaveData struct {
