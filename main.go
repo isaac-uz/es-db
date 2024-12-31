@@ -34,11 +34,11 @@ import (
 //}
 
 const (
-	SaveInterval = 360 * time.Millisecond
+	SaveInterval = 120 * time.Millisecond
 )
 
 var (
-	chanSave            = make(chan *SaveData, 1_000)
+	chanSave            = make(chan []*SaveData, 1_000)
 	ctx                 = context.Background()
 	elasticsearchClient *elasticsearch.Client
 )
@@ -67,14 +67,18 @@ func saveService() {
 
 	for data := range chanSave {
 
-		err := save(data)
+		for i := range data {
 
-		if err != nil {
-			fmt.Println("on saveService:")
-			fmt.Println(err)
+			err := save(data[i])
+
+			if err != nil {
+				fmt.Println("on saveService:")
+				fmt.Println(err)
+			}
+
+			time.Sleep(SaveInterval)
+
 		}
-
-		time.Sleep(SaveInterval)
 
 	}
 
@@ -108,7 +112,7 @@ func save(data *SaveData) error {
 }
 
 func handleSave(c *gin.Context) {
-	data := new(SaveData)
+	data := make([]*SaveData, 0, 1)
 	err := c.BindJSON(&data)
 	if err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("json parse err: %v", err))
