@@ -58,6 +58,21 @@ func main() {
 
 	r.POST("/save", handleSave)
 	r.POST("/search", handleSearch)
+	r.GET("/do-conn", func(c *gin.Context) {
+		es, err := initES()
+		if err != nil {
+			fail(c, err)
+			return
+		}
+
+		ping, err := es.Ping()
+		if err != nil {
+			fail(c, err)
+			return
+		}
+
+		finish(c, ping.String())
+	})
 
 	log.Fatalln(r.Run(":8080"))
 
@@ -121,7 +136,7 @@ func handleSave(c *gin.Context) {
 
 	chanSave <- data
 
-	c.String(http.StatusOK, "OK")
+	finish(c, "OK")
 
 }
 
@@ -143,7 +158,7 @@ func handleSearch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, objs)
+	finish(c, objs)
 
 }
 
@@ -235,6 +250,25 @@ type SearchData struct {
 }
 
 type Obj = map[string]any
+
+func finish(c *gin.Context, res any, err ...error) {
+	if len(err) > 0 && err[0] != nil {
+		fail(c, err[0])
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"res":    res,
+		"status": true,
+	})
+
+}
+
+func fail(c *gin.Context, err error) {
+	c.JSON(400, gin.H{
+		"msg":    err.Error(),
+		"status": true,
+	})
+}
 
 func init() {
 
