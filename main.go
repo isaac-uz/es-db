@@ -92,6 +92,9 @@ func saveService() {
 				fmt.Println()
 				fmt.Printf("data[%d]:\n", i)
 				fmt.Printf("%+v\n", data[i])
+				fmt.Println()
+				b, _ := json.Marshal(data[i])
+				fmt.Println(string(b))
 				fmt.Println("=======================================================================")
 			}
 
