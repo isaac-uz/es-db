@@ -33,7 +33,7 @@ import (
 //}
 
 const (
-	SaveInterval = 120 * time.Millisecond
+	SaveInterval = 210 * time.Millisecond
 )
 
 var (
@@ -86,8 +86,13 @@ func saveService() {
 			err := save(data[i])
 
 			if err != nil {
+				fmt.Println("=======================================================================")
 				fmt.Println("on saveService:")
 				fmt.Println(err)
+				fmt.Println()
+				fmt.Printf("data[%d]:\n", i)
+				fmt.Printf("%+v\n", data[i])
+				fmt.Println("=======================================================================")
 			}
 
 			time.Sleep(SaveInterval)
@@ -113,12 +118,12 @@ func save(data *SaveData) error {
 		getES().Index.WithRefresh("true"),     // Refresh immediately
 	)
 	if err != nil {
-		return fmt.Errorf("failed to save document: %w", err)
+		return fmt.Errorf("failed to save doc err: %s", err)
 	}
 	defer res.Body.Close()
 
 	if res.IsError() {
-		return fmt.Errorf("failed to save document: %s", res.String())
+		return fmt.Errorf("failed to save doc error : %s", res.String())
 	}
 
 	return nil
