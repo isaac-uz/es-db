@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
-	"strings"
 	"time"
 
 	"log"
@@ -148,10 +147,6 @@ func handleSearch(c *gin.Context) {
 		return
 	}
 
-	if data.Fuzziness == "" {
-		data.Fuzziness = "AUTO"
-	}
-
 	objs, err := searchFuzzy(data)
 	if err != nil {
 		c.String(http.StatusBadRequest, fmt.Sprintf("search err: %v", err))
@@ -164,24 +159,17 @@ func handleSearch(c *gin.Context) {
 
 func searchFuzzy(data *SearchData) ([]Obj, error) {
 	client := getES()
-	searchBody := fmt.Sprintf(`
-	{
-		"query": {
-			"match": {
-				"%s": {
-					"query": "%s",
-					"fuzziness": "%s"
-				}
-			}
-		}
-	}`, data.Field, data.Value, data.Fuzziness)
+	searchBody, err := json.Marshal(gin.H{"query": data.Query})
+	if err != nil {
+		return nil, err
+	}
 
 	// Perform the search request
 	res, err := client.Search(
-		client.Search.WithIndex(data.Index),                   // Index name
-		client.Search.WithBody(strings.NewReader(searchBody)), // Search body
-		client.Search.WithTrackTotalHits(true),                // Track total hits
-		client.Search.WithPretty(),                            // Pretty print
+		client.Search.WithIndex(data.Index),                 // Index name
+		client.Search.WithBody(bytes.NewReader(searchBody)), // Search body
+		client.Search.WithTrackTotalHits(true),              // Track total hits
+		client.Search.WithPretty(),                          // Pretty print
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform fuzzy search: %w", err)
@@ -243,10 +231,8 @@ type SaveData struct {
 }
 
 type SearchData struct {
-	Index     string `json:"index"`
-	Field     string `json:"field"`
-	Value     any    `json:"value"`
-	Fuzziness string `json:"fuzziness"`
+	Index string `json:"index"`
+	Query any    `json:"query"`
 }
 
 type Obj = map[string]any
