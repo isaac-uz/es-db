@@ -86,7 +86,9 @@ func saveService() {
 			err := save(data[i])
 
 			if err != nil {
+
 				fmt.Println("=======================================================================")
+
 				fmt.Println("on saveService:")
 				fmt.Println(err)
 				fmt.Println()
@@ -95,7 +97,9 @@ func saveService() {
 				fmt.Println()
 				b, _ := json.Marshal(data[i])
 				fmt.Println(string(b))
+
 				fmt.Println("=======================================================================")
+
 			}
 
 			time.Sleep(SaveInterval)
